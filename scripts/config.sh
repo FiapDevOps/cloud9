@@ -58,13 +58,18 @@ export PUBLIC_DNS=$(curl -s http://169.254.169.254/latest/meta-data/public-hostn
 printf "Identificando o SecurityGroup do projeto"
 aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupName]" --output table
 
-# Definindo os SGs
-CURRENT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupName]" --output text)
-DEFAULT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=default --query "SecurityGroups[*].[GroupName]" --output text)
+# Definindo o SECURITY GROUP atual
+CURRENT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupId]" --output text)
 
-# Regras para SSH e ICMP
-aws ec2 authorize-security-group-ingress --group-name $DEFAULT_SG --protocol tcp --port 0-65535 --source-group $CURRENT_SG
-aws ec2 authorize-security-group-ingress --group-name $DEFAULT_SG --protocol icmp --port -1 --source-group $CURRENT_SG    
+for GROUP_ID in $(aws ec2 describe-security-groups --filters Name=group-name,Values=default --query "SecurityGroups[*].[GroupId]" --output text)
+do
+aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 0-65535 --source-group $CURRENT_SG
+aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol icmp --port -1 --source-group $CURRENT_SG
+aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 80 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+done
+
 }
 
 # ==============================================================================================================================
