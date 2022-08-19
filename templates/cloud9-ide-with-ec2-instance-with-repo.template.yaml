@@ -1,0 +1,69 @@
+# /*
+# Create a Cloud9 environment as a launcher platform to create another stuffs
+# Based on https://github.com/awslabs/aws-cloudformation-templates
+# Adapted from original file: https://github.com/awslabs/aws-cloudformation-templates/blob/master/aws/services/Cloud9/C9.yaml
+# */
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS Cloud9 Environment with AWS CodeCommit Repository
+
+Parameters:
+
+  EC2InstanceType:
+    Description: EC2 instance type on which IDE runs
+    Type:        String
+    Default:     t3.medium
+    AllowedValues:
+      - t2.micro
+      - t3.small
+      - t3.medium
+
+  RM:
+    Description:    Cloque o seu RM (Apenas os num.), usaremos esse dado em algumas Tags do lab.
+    Type:           String
+    Default:        "12345"
+
+  AutoHibernateTimeout:
+    Description:  How many minutes idle before shutting down the IDE. Options, 30min, 1hr, 4hr, 1day, 1week, Never (0)
+    Type:         Number
+    Default:      240
+    AllowedValues:
+      - 30
+      - 60
+      - 240
+      - 1440
+      - 10080
+      - 0
+
+  RepositoryName:
+    Description:    CodeCommit Repository Name
+    Type:           String
+    Default:        'scripts'
+
+  Region:
+    Default: us-west-2 
+    Description: region only 1 region supported 
+    Type: String
+
+Resources:
+
+  C9IDE:
+    Type: 'AWS::Cloud9::EnvironmentEC2'
+    Properties:
+      Name: !Sub '$rm-${RM}-Cloud9-IDE'
+      Description: !Sub '${RM} Cloud9 IDE'
+      AutomaticStopTimeMinutes: !Ref 'AutoHibernateTimeout'
+      InstanceType: !Ref 'EC2InstanceType'
+      Repositories:
+          - RepositoryUrl: !Sub 'https://git-codecommit.${AWS::Region}.amazonaws.com/v1/repos/${RepositoryName}'
+            PathComponent: !Sub 'codecommit/${RepositoryName}'
+
+Outputs:
+
+  Cloud9URL:
+    Description: Cloud9 Environment
+    Value:
+      Fn::Join:
+      - ''
+      - - !Sub https://${AWS::Region}.console.aws.amazon.com/cloud9/ide/
+        - !Ref 'C9IDE'

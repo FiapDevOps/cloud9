@@ -5,14 +5,14 @@
 
 resize () {
 # Resizing para o disco local do ambiente:
-sh $HOME/environment/cloud9/scripts/resize.sh 20 > /dev/null
+sh $HOME/environment/codecommit/scripts/resize.sh 20 > /dev/null
 }
 
 configure_deps () {
 
 test -d $HOME/environment/info || install -d -m 0700 -o ec2-user -g ec2-user $HOME/environment/info
 
-# Identificando o endereco pub da instancia:
+# Identificando metadados da instancia:
 curl -s http://169.254.169.254/latest/meta-data/public-ipv4 -o $HOME/environment/info/PUBLIC_IP.txt && chown ec2-user: $HOME/environment/info/PUBLIC_IP.txt
 curl -s http://169.254.169.254/latest/meta-data/public-hostname -o $HOME/environment/info/PUBLIC_DNS.txt && chown ec2-user: $HOME/environment/info/PUBLIC_DNS.txt
 
@@ -35,6 +35,10 @@ printf "\n Instalando o cliente do Kubernetes \n"
 sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
+# Download e instalação do helm: 
+# https://helm.sh/docs/intro/install/
+sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sudo bash
+
 printf "\n Instalando o ansible via pip \n"
 # https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
 sudo python -m pip install --upgrade pip
@@ -49,25 +53,30 @@ configure_keys () {
 
 printf "Criando chave\n"
 
-test -f $HOME/environment/info/id_lab.pem || aws ec2 create-key-pair --key-name id_lab --key-type rsa | jq -r ".KeyMaterial" > $HOME/environment/info/id_lab.pem && chmod 600 $HOME/environment/info/id* | cp -p $HOME/environment/info/id_lab.pem $HOME/.ssh/id_rsa 
+test -f $HOME/environment/info/id_lab.pem || aws ec2 create-key-pair --key-name id_lab-$(hostname) --key-type rsa | jq -r ".KeyMaterial" > $HOME/environment/info/id_lab.pem && chmod 600 $HOME/environment/info/id* | cp -p $HOME/environment/info/id_lab.pem $HOME/.ssh/id_rsa 
 test -f $HOME/environment/info/id_lab.pub || ssh-keygen -y -f $HOME/environment/info/id_lab.pem > $HOME/environment/info/id_lab.pub && chmod 600 $HOME/.ssh/id_rsa
 
 export PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 export PUBLIC_DNS=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname)
 
 printf "Identificando o SecurityGroup do projeto"
-aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupName]" --output table
+aws ec2 describe-security-groups --filters Name=group-name,Values=*$C9_PID* --query "SecurityGroups[*].[GroupName]" --output table
 
 # Definindo o SECURITY GROUP atual
 CURRENT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupId]" --output text)
+
+# Liberando acesso nas portas 80 e 8080 para os testes
+aws ec2 authorize-security-group-ingress --group-id $CURRENT_SG --protocol tcp --port 80 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $CURRENT_SG --protocol tcp --port 443 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $CURRENT_SG --protocol tcp --port 8080 --cidr 0.0.0.0/0
 
 for GROUP_ID in $(aws ec2 describe-security-groups --filters Name=group-name,Values=default --query "SecurityGroups[*].[GroupId]" --output text)
 do
 aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 0-65535 --source-group $CURRENT_SG
 aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol icmp --port -1 --source-group $CURRENT_SG
-aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 80 --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
-
+#aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 80 --cidr 0.0.0.0/0
+#aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 443 --cidr 0.0.0.0/0
+#aws ec2 authorize-security-group-ingress --group-id $GROUP_ID --protocol tcp --port 8080 --cidr 0.0.0.0/0
 done
 
 }
