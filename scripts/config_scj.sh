@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # ==============================================================================================================================
@@ -63,7 +62,7 @@ printf "Identificando o SecurityGroup do projeto"
 aws ec2 describe-security-groups --filters Name=group-name,Values=*$C9_PID* --query "SecurityGroups[*].[GroupName]" --output table
 
 # Definindo o SECURITY GROUP atual
-CURRENT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=*aws-cloud9* --query "SecurityGroups[*].[GroupId]" --output text)
+CURRENT_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=*$C9_PID* --query "SecurityGroups[*].[GroupId]" --output text)
 
 # Liberando acesso nas portas 80 e 8080 para os testes
 aws ec2 authorize-security-group-ingress --group-id $CURRENT_SG --protocol tcp --port 80 --cidr 0.0.0.0/0
@@ -89,3 +88,9 @@ configure_keys
 
 printf "\n Configurando Enviroment Env \n"
 bash
+
+
+Feedback
+Looking for language selection? Find it in the new 
+Unified Settings
+© 2022, Amazon Web Services, Inc. or its affiliates.
