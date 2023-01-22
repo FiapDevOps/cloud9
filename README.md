@@ -23,15 +23,15 @@ Nesta etapa faremos algumas configurações na instância de onde partirá as au
 
 ```sh
 cd ~/environment
-git clone https://github.com/fiapdevops/pipelines
+git clone https://github.com/fiapdevops/cloud9
 ```
 
 2.2. Execute o script de instalção das ferramentas que serão usadas durante os laboratórios:
 
 ```sh
-chmod +x ~/environment/pipelines/cloud9/scripts/*.sh
+chmod +x ~/environment/cloud9/scripts/*.sh
 
-~/environment/pipelines/cloud9/scripts/config_scj.sh
+~/environment/cloud9/scripts/config_scj.sh
 ```
 
 ---
