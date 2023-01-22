@@ -1,9 +1,6 @@
-# cloud9
-Cloud 9 scripts for env automation
-
 # Fiaplabs
 
-Nesta configuração você fará a preparação da instância que utilizaremos para os laboratórios envolvendo o ambiente AWS;
+Cloud 9 scripts para configurar a IDE e execução de Docker, nesta configuração você fará a preparação da instância que utilizaremos para os laboratórios envolvendo o ambiente AWS;
 
 ## 1. Processo de configuração via automação:
 
